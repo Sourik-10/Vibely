@@ -42,11 +42,15 @@ const CallPage = () => {
       try {
         console.log("Initializing Stream video client...");
 
+        // Keep user payload small (<5KB). Avoid base64 images or oversized fields.
         const user = {
           id: authUser._id,
-          name: authUser.fullName,
-          image: authUser.profilePic,
+          name: (authUser.fullName || "User").slice(0, 100),
         };
+        const pic = authUser.profilePic;
+        if (pic && /^https?:\/\//i.test(pic) && pic.length < 1024) {
+          user.image = pic;
+        }
 
         const videoClient = new StreamVideoClient({
           apiKey: STREAM_API_KEY,

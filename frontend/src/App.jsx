@@ -28,6 +28,8 @@ const App = () => {
   useEffect(() => {
     if (!isAuthenticated) return;
     const socket = getSocketClient();
+    // Register user room for global notifications
+    if (authUser?._id) socket.emit("register-user", authUser._id);
     const onConnect = () => console.log("Socket connected", socket.id);
     const onDisconnect = () => console.log("Socket disconnected");
     socket.on("connect", onConnect);

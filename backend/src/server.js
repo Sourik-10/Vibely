@@ -41,6 +41,14 @@ const io = new SocketIOServer(httpServer, {
 io.on("connection", (socket) => {
   console.log("Socket connected:", socket.id);
 
+  // Map socket to a user-specific room for global notifications
+  socket.on("register-user", (userId) => {
+    if (!userId) return;
+    const room = `user:${userId}`;
+    socket.join(room);
+    console.log(`Socket ${socket.id} registered user room ${room}`);
+  });
+
   socket.on("join-conversation", (roomId) => {
     if (!roomId) return;
     socket.join(roomId);
@@ -63,6 +71,18 @@ io.on("connection", (socket) => {
     }
     // Broadcast to all except sender
     socket.to(roomId).emit("receive-message", message);
+  });
+
+  // Call signaling: notify the other participant(s)
+  socket.on("start-call", ({ roomId, targetUserId, caller }) => {
+    if (!roomId) return;
+    const payload = { roomId, caller };
+    // Notify peers in the conversation room
+    socket.to(roomId).emit("incoming-call", payload);
+    // Also notify target user globally if they are elsewhere in the app
+    if (targetUserId) {
+      socket.to(`user:${targetUserId}`).emit("incoming-call", payload);
+    }
   });
 
   socket.on("disconnect", () => {

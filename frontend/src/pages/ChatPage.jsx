@@ -1,12 +1,14 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { useParams } from "react-router";
+import { useNavigate, useParams } from "react-router";
 import useAuthUser from "../hooks/useAuthUser";
 import ChatLoader from "../components/ChatLoader";
 import { getSocketClient } from "../lib/socket";
 import { getChatHistory } from "../lib/api";
+import CallButton from "../components/CallButton";
 
 const ChatPage = () => {
   const { id: targetUserId } = useParams();
+  const navigate = useNavigate();
   const { authUser } = useAuthUser();
   const [isJoining, setIsJoining] = useState(true);
   const [messages, setMessages] = useState([]);
@@ -75,11 +77,36 @@ const ChatPage = () => {
     setInput("");
   };
 
+  const handleVideoCall = () => {
+    if (!roomId || !authUser) return;
+    const socket = getSocketClient();
+    const callUrl = `${window.location.origin}/call/${roomId}`;
+    const message = {
+      id: `${Date.now()}-${Math.random().toString(36).slice(2)}`,
+      roomId,
+      from: authUser._id,
+      text: `I've started a video call. Join me here: ${callUrl}`,
+      ts: Date.now(),
+    };
+    // show locally and notify peer
+    setMessages((prev) => [...prev, message]);
+    socket.emit("send-message", { roomId, message });
+    // notify peer about incoming call
+    socket.emit("start-call", {
+      roomId,
+      targetUserId: targetUserId,
+      caller: { id: authUser._id, name: authUser.fullName },
+    });
+    // navigate to call page
+    navigate(`/call/${roomId}`);
+  };
+
   if (isJoining || !authUser) return <ChatLoader />;
 
   return (
-    <div className="h-[93vh] flex flex-col p-3">
-      <div className="font-semibold mb-2">Chat</div>
+    <div className="h-[93vh] flex flex-col p-3 relative">
+      <CallButton handleVideoCall={handleVideoCall} />
+      <div className="font-semibold mb-2 mt-14">Chat</div>
 
       <div
         ref={listRef}
