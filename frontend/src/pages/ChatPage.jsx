@@ -106,7 +106,7 @@ const ChatPage = () => {
   return (
     <div className="h-[93vh] flex flex-col p-3 relative">
       <CallButton handleVideoCall={handleVideoCall} />
-      <div className="font-semibold mb-2 mt-14">Chat</div>
+      <div className="font-semibold mb-2 mt-2 pl-1 text-left">Chat</div>
 
       <div
         ref={listRef}
