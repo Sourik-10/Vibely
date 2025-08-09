@@ -1,5 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { acceptFriendRequest, getFriendRequests } from "../lib/api";
+import { Link } from "react-router-dom";
 import {
   BellIcon,
   ClockIcon,
@@ -7,7 +8,6 @@ import {
   UserCheckIcon,
 } from "lucide-react";
 import NoNotificationsFound from "../components/NoNotificationsFound";
-
 
 const NotificationsPage = () => {
   const queryClient = useQueryClient();
@@ -131,9 +131,17 @@ const NotificationsPage = () => {
                               Recently
                             </p>
                           </div>
-                          <div className="badge badge-success">
-                            <MessageSquareIcon className="h-3 w-3 mr-1" />
-                            New Friend
+                          <div className="flex flex-col items-end gap-2">
+                            <div className="badge badge-success">
+                              <MessageSquareIcon className="h-3 w-3 mr-1" />
+                              New Friend
+                            </div>
+                            <Link
+                              to={`/chat/${notification.recipient._id}`}
+                              className="btn btn-primary btn-sm"
+                            >
+                              Message
+                            </Link>
                           </div>
                         </div>
                       </div>
