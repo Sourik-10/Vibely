@@ -85,6 +85,12 @@ io.on("connection", (socket) => {
     }
   });
 
+  // Call end: when one party hangs up, notify the others
+  socket.on("end-call", ({ roomId }) => {
+    if (!roomId) return;
+    socket.to(roomId).emit("call-ended", { roomId });
+  });
+
   socket.on("disconnect", () => {
     console.log("Socket disconnected:", socket.id);
   });

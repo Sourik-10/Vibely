@@ -18,6 +18,7 @@ import {
 import "@stream-io/video-react-sdk/dist/css/styles.css";
 import toast from "react-hot-toast";
 import PageLoader from "../components/PageLoader";
+import { getSocketClient } from "../lib/socket";
 
 const STREAM_API_KEY = import.meta.env.VITE_STREAM_API_KEY;
 
@@ -61,6 +62,15 @@ const CallPage = () => {
         const callInstance = videoClient.call("default", callId);
 
         await callInstance.join({ create: true });
+
+        // Setup socket listener for call-ended to auto-leave
+        const socket = getSocketClient();
+        const onCallEnded = (payload) => {
+          if (payload?.roomId === callId) {
+            callInstance.leave().catch(() => {});
+          }
+        };
+        socket.on("call-ended", onCallEnded);
 
         console.log("Joined call successfully");
 
@@ -109,7 +119,13 @@ const CallContent = () => {
   return (
     <StreamTheme>
       <SpeakerLayout />
-      <CallControls />
+      <CallControls
+        onLeave={() => {
+          // Notify peers this call ended
+          const socket = getSocketClient();
+          socket.emit("end-call", { roomId: callId });
+        }}
+      />
     </StreamTheme>
   );
 };
