@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useEffect } from "react";
 import { Routes, Route, Navigate } from "react-router-dom";
 
 import HomePage from "./pages/HomePage.jsx";
@@ -13,6 +13,7 @@ import PageLoader from "./components/PageLoader.jsx";
 import useAuthUser from "./hooks/useAuthUser.js";
 import Layout from "./components/Layout.jsx";
 import { useThemeStore } from "./store/useThemeStore.js";
+import { getSocketClient } from "./lib/socket.js";
 
 const App = () => {
   // Example of using useQuery
@@ -23,6 +24,19 @@ const App = () => {
 
   const isAuthenticated = Boolean(authUser);
   const isOnboarded = authUser?.isOnboarded;
+
+  useEffect(() => {
+    if (!isAuthenticated) return;
+    const socket = getSocketClient();
+    const onConnect = () => console.log("Socket connected", socket.id);
+    const onDisconnect = () => console.log("Socket disconnected");
+    socket.on("connect", onConnect);
+    socket.on("disconnect", onDisconnect);
+    return () => {
+      socket.off("connect", onConnect);
+      socket.off("disconnect", onDisconnect);
+    };
+  }, [isAuthenticated]);
 
   if (isLoading) return <PageLoader />;
 

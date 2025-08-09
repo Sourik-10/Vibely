@@ -1,117 +1,115 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useParams } from "react-router";
 import useAuthUser from "../hooks/useAuthUser";
-import { useQuery } from "@tanstack/react-query";
-
-
-import {
-  Channel,
-  ChannelHeader,
-  Chat,
-  MessageInput,
-  MessageList,
-  Thread,
-  Window,
-} from "stream-chat-react";
-import { StreamChat } from "stream-chat";
-import toast from "react-hot-toast";
-
 import ChatLoader from "../components/ChatLoader";
-import { getStreamToken } from "../lib/api";
-import CallButton from "../components/CallButton";
-
-
-const STREAM_API_KEY = import.meta.env.VITE_STREAM_API_KEY;
+import { getSocketClient } from "../lib/socket";
 
 const ChatPage = () => {
   const { id: targetUserId } = useParams();
-
-  const [chatClient, setChatClient] = useState(null);
-  const [channel, setChannel] = useState(null);
-  const [loading, setLoading] = useState(true);
-
   const { authUser } = useAuthUser();
+  const [isJoining, setIsJoining] = useState(true);
+  const [messages, setMessages] = useState([]);
+  const [input, setInput] = useState("");
+  const listRef = useRef(null);
 
-  const { data: tokenData } = useQuery({
-    queryKey: ["streamToken"],
-    queryFn: getStreamToken,
-    enabled: !!authUser, // this will run only when authUser is available
-  });
+  const roomId = useMemo(() => {
+    if (!authUser?._id || !targetUserId) return null;
+    return [authUser._id, targetUserId].sort().join("-");
+  }, [authUser?._id, targetUserId]);
 
   useEffect(() => {
-    const initChat = async () => {
-      if (!tokenData?.token || !authUser) return;
+    if (!authUser || !roomId) return;
+    const socket = getSocketClient();
 
-      try {
-        console.log("Initializing stream chat client...");
-
-        const client = StreamChat.getInstance(STREAM_API_KEY);
-
-        await client.connectUser(
-          {
-            id: authUser._id,
-            name: authUser.fullName,
-            image: authUser.profilePic,
-          },
-          tokenData.token
-        );
-
-        //
-        const channelId = [authUser._id, targetUserId].sort().join("-");
-
-        // you and me
-        // if i start the chat => channelId: [myId, yourId]
-        // if you start the chat => channelId: [yourId, myId]  => [myId,yourId]
-
-        const currChannel = client.channel("messaging", channelId, {
-          members: [authUser._id, targetUserId],
-        });
-
-        await currChannel.watch();
-
-        setChatClient(client);
-        setChannel(currChannel);
-      } catch (error) {
-        console.error("Error initializing chat:", error);
-        toast.error("Could not connect to chat. Please try again.");
-      } finally {
-        setLoading(false);
-      }
+    const handleReceive = (message) => {
+      setMessages((prev) => [...prev, message]);
     };
 
-    initChat();
-  }, [tokenData, authUser, targetUserId]);
+    socket.emit("join-conversation", roomId);
+    socket.on("receive-message", handleReceive);
 
-  const handleVideoCall = () => {
-    if (channel) {
-      const callUrl = `${window.location.origin}/call/${channel.id}`;
+    setIsJoining(false);
 
-      channel.sendMessage({
-        text: `I've started a video call. Join me here: ${callUrl}`,
-      });
+    return () => {
+      socket.off("receive-message", handleReceive);
+    };
+  }, [authUser, roomId]);
 
-      toast.success("Video call link sent successfully!");
+  useEffect(() => {
+    if (listRef.current) {
+      listRef.current.scrollTop = listRef.current.scrollHeight;
     }
+  }, [messages]);
+
+  const handleSend = () => {
+    const text = input.trim();
+    if (!text || !roomId || !authUser) return;
+
+    const socket = getSocketClient();
+    const message = {
+      id: `${Date.now()}-${Math.random().toString(36).slice(2)}`,
+      roomId,
+      from: authUser._id,
+      text,
+      ts: Date.now(),
+    };
+
+    setMessages((prev) => [...prev, message]);
+    socket.emit("send-message", { roomId, message });
+    setInput("");
   };
 
-  if (loading || !chatClient || !channel) return <ChatLoader />;
+  if (isJoining || !authUser) return <ChatLoader />;
 
   return (
-    <div className="h-[93vh]">
-      <Chat client={chatClient}>
-        <Channel channel={channel}>
-          <div className="w-full relative">
-          <CallButton handleVideoCall={handleVideoCall} />
-            <Window>
-              <ChannelHeader />
-              <MessageList />
-              <MessageInput focus />
-            </Window>
-          </div>
-          <Thread />
-        </Channel>
-      </Chat>
+    <div className="h-[93vh] flex flex-col p-3">
+      <div className="font-semibold mb-2">Chat</div>
+
+      <div
+        ref={listRef}
+        className="flex-1 overflow-y-auto space-y-2 p-2 bg-base-200 rounded"
+      >
+        {messages.map((m) => {
+          const isMine = m.from === authUser._id;
+          return (
+            <div
+              key={m.id}
+              className={`flex ${isMine ? "justify-end" : "justify-start"}`}
+            >
+              <div
+                className={`max-w-[75%] px-3 py-2 rounded-lg ${
+                  isMine ? "bg-primary text-primary-content" : "bg-base-100"
+                }`}
+              >
+                <div className="text-sm whitespace-pre-wrap break-words">
+                  {m.text}
+                </div>
+                <div className="text-[10px] opacity-60 mt-1">
+                  {new Date(m.ts).toLocaleTimeString()}
+                </div>
+              </div>
+            </div>
+          );
+        })}
+      </div>
+
+      <div className="mt-3 flex gap-2">
+        <input
+          type="text"
+          className="input input-bordered flex-1"
+          placeholder="Type a message"
+          value={input}
+          onChange={(e) => setInput(e.target.value)}
+          onKeyDown={(e) => {
+            if (e.key === "Enter") handleSend();
+          }}
+        />
+        <button className="btn btn-primary" onClick={handleSend}>
+          Send
+        </button>
+      </div>
     </div>
   );
 };
+
 export default ChatPage;

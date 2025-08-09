@@ -98,7 +98,7 @@ export function getLanguageFlag(language) {
             }
           }
         }}
-        onLoad={() =>
+        onLoad={(e) =>
           console.log("Flag image loaded successfully from:", e.target.src)
         }
       />
