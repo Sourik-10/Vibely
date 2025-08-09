@@ -10,6 +10,7 @@ import userRoutes from "./routes/user.route.js";
 import chatRoutes from "./routes/chat.route.js";
 import profileRoutes from "./routes/profile.route.js";
 import cors from "cors";
+import Message from "./models/Message.js";
 const app = express();
 const PORT = process.env.PORT || 5001;
 
@@ -48,6 +49,18 @@ io.on("connection", (socket) => {
 
   socket.on("send-message", ({ roomId, message }) => {
     if (!roomId || !message) return;
+    // Persist message
+    try {
+      const persist = new Message({
+        roomId,
+        from: message.from,
+        text: message.text,
+        ts: message.ts,
+      });
+      persist.save().catch((e) => console.error("Save message error:", e));
+    } catch (e) {
+      console.error("Persist error:", e);
+    }
     // Broadcast to all except sender
     socket.to(roomId).emit("receive-message", message);
   });

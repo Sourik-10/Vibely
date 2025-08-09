@@ -117,3 +117,10 @@ export async function getStreamToken() {
     throw error;
   }
 }
+
+export async function getChatHistory(roomId) {
+  const res = await axiosInstance.get(
+    `/chat/history/${encodeURIComponent(roomId)}`
+  );
+  return res.data;
+}

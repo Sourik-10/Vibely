@@ -3,6 +3,7 @@ import { useParams } from "react-router";
 import useAuthUser from "../hooks/useAuthUser";
 import ChatLoader from "../components/ChatLoader";
 import { getSocketClient } from "../lib/socket";
+import { getChatHistory } from "../lib/api";
 
 const ChatPage = () => {
   const { id: targetUserId } = useParams();
@@ -19,18 +20,33 @@ const ChatPage = () => {
 
   useEffect(() => {
     if (!authUser || !roomId) return;
+
+    let isMounted = true;
     const socket = getSocketClient();
 
     const handleReceive = (message) => {
       setMessages((prev) => [...prev, message]);
     };
 
-    socket.emit("join-conversation", roomId);
-    socket.on("receive-message", handleReceive);
+    const joinAndLoad = async () => {
+      try {
+        socket.emit("join-conversation", roomId);
+        socket.on("receive-message", handleReceive);
+        const history = await getChatHistory(roomId);
+        if (isMounted && Array.isArray(history?.messages)) {
+          setMessages(history.messages);
+        }
+      } catch (e) {
+        console.error("Failed to load chat history:", e);
+      } finally {
+        if (isMounted) setIsJoining(false);
+      }
+    };
 
-    setIsJoining(false);
+    joinAndLoad();
 
     return () => {
+      isMounted = false;
       socket.off("receive-message", handleReceive);
     };
   }, [authUser, roomId]);
