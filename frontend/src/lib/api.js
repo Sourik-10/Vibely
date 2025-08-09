@@ -31,38 +31,89 @@ export const completeOnboarding = async (onboardingData) => {
 };
 
 export async function getUserFriends() {
-  const response = await axiosInstance.get("/users/friends");
-  return response.data;
+  try {
+    console.log("Fetching user friends...");
+    const response = await axiosInstance.get("/users/friends");
+    console.log("Friends response:", response.data);
+    return response.data;
+  } catch (error) {
+    console.error("Error fetching user friends:", error);
+    throw error;
+  }
 }
 
 export async function getRecommendedUsers() {
-  const response = await axiosInstance.get("/users");
-  return response.data;
+  try {
+    console.log("Fetching recommended users...");
+    const response = await axiosInstance.get("/users");
+    console.log("Recommended users response:", response.data);
+    return response.data;
+  } catch (error) {
+    console.error("Error fetching recommended users:", error);
+    throw error;
+  }
 }
 
 export async function getOutgoingFriendReqs() {
-  const response = await axiosInstance.get("/users/outgoing-friend-requests");
-  return response.data;
+  try {
+    console.log("Fetching outgoing friend requests...");
+    const response = await axiosInstance.get("/users/outgoing-friend-requests");
+    console.log("Outgoing requests response:", response.data);
+    return response.data;
+  } catch (error) {
+    console.error("Error fetching outgoing friend requests:", error);
+    throw error;
+  }
 }
 
 export async function sendFriendRequest(userId) {
-  const response = await axiosInstance.post(`/users/friend-request/${userId}`);
-  return response.data;
+  try {
+    console.log("Sending friend request to:", userId);
+    const response = await axiosInstance.post(
+      `/users/friend-request/${userId}`
+    );
+    console.log("Send request response:", response.data);
+    return response.data;
+  } catch (error) {
+    console.error("Error sending friend request:", error);
+    throw error;
+  }
 }
 
 export async function getFriendRequests() {
-  const response = await axiosInstance.get("/users/friend-requests");
-  return response.data;
+  try {
+    console.log("Fetching friend requests...");
+    const response = await axiosInstance.get("/users/friend-requests");
+    console.log("Friend requests response:", response.data);
+    return response.data;
+  } catch (error) {
+    console.error("Error fetching friend requests:", error);
+    throw error;
+  }
 }
 
 export async function acceptFriendRequest(requestId) {
-  const response = await axiosInstance.put(
-    `/users/friend-request/${requestId}/accept`
-  );
-  return response.data;
+  try {
+    console.log("Accepting friend request:", requestId);
+    const response = await axiosInstance.put(
+      `/users/friend-request/${requestId}/accept`
+    );
+    console.log("Accept request response:", response.data);
+    return response.data;
+  } catch (error) {
+    console.error("Error accepting friend request:", error);
+    throw error;
+  }
 }
 
 export async function getStreamToken() {
-  const response = await axiosInstance.get("/chat/token");
-  return response.data;
+  try {
+    console.log("Fetching stream token...");
+    const response = await axiosInstance.get("/chat/token");
+    console.log("Stream token response:", response.data);
+    return response.data;
+  } catch (error) {
+    console.error("Error fetching stream token:", error);
+    throw error;
+  }
 }

@@ -252,14 +252,14 @@ const OnboardingPage = () => {
                 </label>
 
                 {/* Generate Random Avatar BTN */}
-                <button
+                {/* <button
                   type="button"
                   onClick={handleRandomAvatar}
                   className="btn btn-accent"
                 >
                   <ShuffleIcon className="size-4 mr-2" />
                   Generate Avatar
-                </button>
+                </button> */}
               </div>
 
               {/* File Info */}

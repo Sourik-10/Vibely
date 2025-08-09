@@ -195,3 +195,21 @@ export const LANGUAGE_TO_FLAG = {
   turkish: "tr",
   dutch: "nl",
 };
+
+// Debug function to check language mappings
+export const debugLanguageMapping = (language) => {
+  if (!language) return "No language provided";
+
+  const langLower = language.toLowerCase().trim();
+  const countryCode = LANGUAGE_TO_FLAG[langLower];
+
+  console.log("Language mapping debug:", {
+    original: language,
+    lowercase: langLower,
+    countryCode: countryCode,
+    hasMapping: !!countryCode,
+    allMappings: LANGUAGE_TO_FLAG,
+  });
+
+  return countryCode;
+};
