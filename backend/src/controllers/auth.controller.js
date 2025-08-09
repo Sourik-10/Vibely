@@ -12,8 +12,10 @@ export async function signup(req, res) {
       });
     }
 
-     if (password.length < 6) {
-      return res.status(400).json({ message: "Password must be at least 6 characters" });
+    if (password.length < 6) {
+      return res
+        .status(400)
+        .json({ message: "Password must be at least 6 characters" });
     }
 
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -28,8 +30,7 @@ export async function signup(req, res) {
         .json({ message: "Email already exists,please use a different one " });
     }
 
-    const idx = Math.floor(Math.random() * 100) + 1;
-    const randomAvatar = `https://avatar-placeholder.iran.liara.run/${idx}.png`;
+    const randomAvatar = `https://api.dicebear.com/7.x/avataaars/svg?seed=${fullName}&backgroundColor=b6e3f4,c0aede,d1d4f9,ffd5dc,ffdfbf`;
 
     const user = await User.create({
       email,
@@ -104,7 +105,7 @@ export async function login(req, res) {
 }
 
 export function logout(req, res) {
-  res.clearCookie("jwt"); 
+  res.clearCookie("jwt");
   res.status(200).json({ success: true, message: "Logout successful" });
 }
 
@@ -118,13 +119,20 @@ export async function me(req, res) {
   }
 }
 
-  export async function onboard(req, res) {
+export async function onboard(req, res) {
   try {
     const userId = req.user._id;
 
-    const { fullName, bio, nativeLanguage, learningLanguage, location } = req.body;
+    const { fullName, bio, nativeLanguage, learningLanguage, location } =
+      req.body;
 
-    if (!fullName || !bio || !nativeLanguage || !learningLanguage || !location) {
+    if (
+      !fullName ||
+      !bio ||
+      !nativeLanguage ||
+      !learningLanguage ||
+      !location
+    ) {
       return res.status(400).json({
         message: "All fields are required",
         missingFields: [
@@ -146,21 +154,22 @@ export async function me(req, res) {
       { new: true }
     );
 
-    if (!updatedUser) return res.status(404).json({ message: "User not found" });
+    if (!updatedUser)
+      return res.status(404).json({ message: "User not found" });
 
-    try{
-         await upsertStreameUser({
-      id: updatedUser._id.toString(),
-      name: updatedUser.fullName,
-      image: updatedUser.profilePic || "",
-    });
-    console.log(`Stream user updated for ${updatedUser.fullName}`);
-
-
-    }catch (stremError){
-      console.log("Error updating stream user during onboarding:",stremError.message);
+    try {
+      await upsertStreameUser({
+        id: updatedUser._id.toString(),
+        name: updatedUser.fullName,
+        image: updatedUser.profilePic || "",
+      });
+      console.log(`Stream user updated for ${updatedUser.fullName}`);
+    } catch (stremError) {
+      console.log(
+        "Error updating stream user during onboarding:",
+        stremError.message
+      );
     }
- 
 
     res.status(200).json({ success: true, user: updatedUser });
   } catch (error) {
