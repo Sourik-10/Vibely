@@ -12,25 +12,30 @@ import cors from "cors";
 import Message from "./models/Message.js";
 
 const app = express();
-const PORT = process.env.PORT || 5001;
 
+// Always ensure PORT is numeric
+const PORT = parseInt(process.env.PORT, 10) || 5001;
+
+// Allowed origins (local + production)
 const allowedOrigins = [
   "http://localhost:5173",
-  "https://vibely-7mk7.vercel.app"
+  process.env.FRONTEND_URL || "https://vibely-7mk7.vercel.app"
 ];
 
 // CORS for REST API
-app.use(cors({
-  origin: function (origin, callback) {
-    if (!origin) return callback(null, true); // allow tools like Postman
-    if (allowedOrigins.includes(origin)) {
-      return callback(null, true);
-    } else {
-      return callback(new Error("Not allowed by CORS"));
-    }
-  },
-  credentials: true
-}));
+app.use(
+  cors({
+    origin: function (origin, callback) {
+      if (!origin) return callback(null, true); // allow tools like Postman
+      if (allowedOrigins.includes(origin)) {
+        return callback(null, true);
+      } else {
+        return callback(new Error("Not allowed by CORS"));
+      }
+    },
+    credentials: true
+  })
+);
 
 app.use(express.json());
 app.use(cookieParser());
@@ -75,7 +80,7 @@ io.on("connection", (socket) => {
         roomId,
         from: message.from,
         text: message.text,
-        ts: message.ts,
+        ts: message.ts
       });
       persist.save().catch((e) => console.error("Save message error:", e));
     } catch (e) {
@@ -114,3 +119,4 @@ connectDB()
     console.error("Database connection failed:", err);
     process.exit(1);
   });
+
