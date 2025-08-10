@@ -1,11 +1,13 @@
-import { Link, useLocation } from "react-router";
+import { Link, useLocation } from "react-router-dom";
 import { useEffect, useState } from "react";
 import useAuthUser from "../hooks/useAuthUser";
-import { BellIcon, LogOutIcon, ShipWheelIcon } from "lucide-react";
+import { BellIcon, LogOutIcon, Sparkles } from "lucide-react";
 import ThemeSelector from "./ThemeSelector";
 import useLogout from "../hooks/useLogout";
 import ProfileImage from "./ProfileImage";
 import { getSocketClient } from "../lib/socket";
+import { useQuery } from "@tanstack/react-query";
+import { getNotificationCount } from "../lib/api";
 
 const Navbar = () => {
   const { authUser } = useAuthUser();
@@ -20,6 +22,13 @@ const Navbar = () => {
 
   const { logoutMutation } = useLogout();
   const [incoming, setIncoming] = useState(null);
+
+  // Get notification count
+  const { data: notificationCount = 0 } = useQuery({
+    queryKey: ["notificationCount"],
+    queryFn: getNotificationCount,
+    refetchInterval: 30000, // Refetch every 30 seconds
+  });
 
   useEffect(() => {
     const socket = getSocketClient();
@@ -36,9 +45,9 @@ const Navbar = () => {
           {isChatPage && (
             <div className="pl-5">
               <Link to="/" className="flex items-center gap-2.5">
-                <ShipWheelIcon className="size-9 text-primary" />
+                <Sparkles className="size-9 text-primary" />
                 <span className="text-3xl font-bold font-mono bg-clip-text text-transparent bg-gradient-to-r from-primary to-secondary  tracking-wider">
-                  Streamify
+                  Vibely
                 </span>
               </Link>
             </div>
@@ -46,8 +55,13 @@ const Navbar = () => {
 
           <div className="flex items-center gap-3 sm:gap-4 ml-auto">
             <Link to={"/notifications"}>
-              <button className="btn btn-ghost btn-circle">
+              <button className="btn btn-ghost btn-circle relative">
                 <BellIcon className="h-6 w-6 text-base-content opacity-70" />
+                {notificationCount > 0 && (
+                  <span className="absolute -top-1 -right-1 bg-error text-white text-xs rounded-full h-5 w-5 flex items-center justify-center font-bold">
+                    {notificationCount > 99 ? "99+" : notificationCount}
+                  </span>
+                )}
               </button>
             </Link>
             {incoming && (

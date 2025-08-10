@@ -3,6 +3,7 @@ import { protectRoute } from "../middleware/auth.middleware.js";
 import {
   uploadProfileImage,
   deleteProfileImage,
+  updateProfile,
 } from "../controllers/profile.controller.js";
 import upload from "../middleware/upload.middleware.js";
 
@@ -18,5 +19,8 @@ router.post(
 
 // Delete/reset profile image
 router.delete("/delete-image", protectRoute, deleteProfileImage);
+
+// Update profile information
+router.put("/update", protectRoute, updateProfile);
 
 export default router;

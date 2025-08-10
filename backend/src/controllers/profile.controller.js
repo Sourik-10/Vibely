@@ -117,3 +117,58 @@ export async function deleteProfileImage(req, res) {
     res.status(500).json({ message: "Error deleting profile image" });
   }
 }
+
+export async function updateProfile(req, res) {
+  try {
+    const userId = req.user._id;
+    const { fullName, bio, nativeLanguage, learningLanguage, location } =
+      req.body;
+
+    // Validate required fields
+    if (!fullName || !nativeLanguage || !learningLanguage || !location) {
+      return res.status(400).json({
+        message:
+          "Missing required fields: fullName, nativeLanguage, learningLanguage, location",
+      });
+    }
+
+    // Update user profile
+    const updatedUser = await User.findByIdAndUpdate(
+      userId,
+      {
+        fullName,
+        bio: bio || "",
+        nativeLanguage,
+        learningLanguage,
+        location,
+        isOnboarded: true,
+      },
+      { new: true }
+    );
+
+    if (!updatedUser) {
+      return res.status(404).json({ message: "User not found" });
+    }
+
+    // Update Stream user
+    try {
+      await upsertStreameUser({
+        id: updatedUser._id.toString(),
+        name: updatedUser.fullName,
+        image: updatedUser.profilePic,
+      });
+      console.log(`Stream user profile updated for ${updatedUser.fullName}`);
+    } catch (streamError) {
+      console.log("Error updating Stream user profile:", streamError.message);
+    }
+
+    res.status(200).json({
+      success: true,
+      message: "Profile updated successfully",
+      user: updatedUser,
+    });
+  } catch (error) {
+    console.error("Error updating profile:", error);
+    res.status(500).json({ message: "Error updating profile" });
+  }
+}

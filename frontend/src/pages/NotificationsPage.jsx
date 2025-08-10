@@ -22,18 +22,27 @@ const NotificationsPage = () => {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["friendRequests"] });
       queryClient.invalidateQueries({ queryKey: ["friends"] });
+      queryClient.invalidateQueries({ queryKey: ["notificationCount"] });
     },
   });
 
   const incomingRequests = friendRequests?.incomingReqs || [];
   const acceptedRequests = friendRequests?.acceptedReqs || [];
+  const totalNotifications = incomingRequests.length + acceptedRequests.length;
 
   return (
     <div className="p-4 sm:p-6 lg:p-8">
       <div className="container mx-auto max-w-4xl space-y-8">
-        <h1 className="text-2xl sm:text-3xl font-bold tracking-tight mb-6">
-          Notifications
-        </h1>
+        <div className="flex items-center gap-3 mb-6">
+          <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">
+            Notifications
+          </h1>
+          {totalNotifications > 0 && (
+            <span className="badge badge-primary badge-lg">
+              {totalNotifications}
+            </span>
+          )}
+        </div>
 
         {isLoading ? (
           <div className="flex justify-center py-12">

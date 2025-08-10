@@ -124,3 +124,27 @@ export async function getChatHistory(roomId) {
   );
   return res.data;
 }
+
+export async function updateProfile(profileData) {
+  try {
+    console.log("Updating profile with data:", profileData);
+    const response = await axiosInstance.put("/profile/update", profileData);
+    console.log("Profile update response:", response.data);
+    return response.data;
+  } catch (error) {
+    console.error("Error updating profile:", error);
+    throw error;
+  }
+}
+
+export async function getNotificationCount() {
+  try {
+    console.log("Fetching notification count...");
+    const response = await axiosInstance.get("/users/friend-requests");
+    const incomingCount = response.data?.incomingReqs?.length || 0;
+    return incomingCount;
+  } catch (error) {
+    console.error("Error fetching notification count:", error);
+    return 0;
+  }
+}

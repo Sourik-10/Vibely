@@ -19,8 +19,11 @@ import NoFriendsFound from "../components/NoFriendsFound";
 import { capitialize } from "../lib/utils";
 import FlagTest from "../components/FlagTest";
 
+import useAuthUser from "../hooks/useAuthUser";
+
 const HomePage = () => {
   const queryClient = useQueryClient();
+  const { authUser } = useAuthUser();
   const [outgoingRequestsIds, setOutgoingRequestsIds] = useState(new Set());
 
   const {
@@ -45,8 +48,10 @@ const HomePage = () => {
 
   const { mutate: sendRequestMutation, isPending } = useMutation({
     mutationFn: sendFriendRequest,
-    onSuccess: () =>
-      queryClient.invalidateQueries({ queryKey: ["outgoingFriendReqs"] }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["outgoingFriendReqs"] });
+      queryClient.invalidateQueries({ queryKey: ["notificationCount"] });
+    },
   });
 
   const { data: outgoingFriendReqs = [], error: outgoingError } = useQuery({
@@ -96,8 +101,6 @@ const HomePage = () => {
             </div>
           </div>
         )}
-
-      
 
         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
           <h2 className="text-2xl sm:text-3xl font-bold tracking-tight">
