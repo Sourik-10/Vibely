@@ -19,40 +19,42 @@ const allowedOrigins = [
   "https://vibely-7mk7.vercel.app"
 ];
 
+// CORS for REST API
 app.use(cors({
   origin: function (origin, callback) {
-    // Allow requests with no origin (like mobile apps, curl)
-    if (!origin) return callback(null, true);
+    if (!origin) return callback(null, true); // allow tools like Postman
     if (allowedOrigins.includes(origin)) {
       return callback(null, true);
     } else {
       return callback(new Error("Not allowed by CORS"));
     }
   },
-  credentials: true // if using cookies/auth
+  credentials: true
 }));
 
 app.use(express.json());
 app.use(cookieParser());
-
 app.use(express.urlencoded({ extended: true }));
+
+// Routes
 app.use("/api/auth", authRoutes);
 app.use("/api/users", userRoutes);
 app.use("/api/chat", chatRoutes);
 app.use("/api/profile", profileRoutes);
 
-// Create HTTP server and initialize Socket.IO
+// Create HTTP server and Socket.IO
 const httpServer = http.createServer(app);
+
 const io = new SocketIOServer(httpServer, {
-  cors: {  origin: "http://localhost:5173",
-     credentials: true,
-  },
+  cors: {
+    origin: allowedOrigins,
+    credentials: true
+  }
 });
 
 io.on("connection", (socket) => {
   console.log("Socket connected:", socket.id);
 
-  // Map socket to a user-specific room for global notifications
   socket.on("register-user", (userId) => {
     if (!userId) return;
     const room = `user:${userId}`;
@@ -68,7 +70,6 @@ io.on("connection", (socket) => {
 
   socket.on("send-message", ({ roomId, message }) => {
     if (!roomId || !message) return;
-    // Persist message
     try {
       const persist = new Message({
         roomId,
@@ -80,23 +81,18 @@ io.on("connection", (socket) => {
     } catch (e) {
       console.error("Persist error:", e);
     }
-    // Broadcast to all except sender
     socket.to(roomId).emit("receive-message", message);
   });
 
-  // Call signaling: notify the other participant(s)
   socket.on("start-call", ({ roomId, targetUserId, caller }) => {
     if (!roomId) return;
     const payload = { roomId, caller };
-    // Notify peers in the conversation room
     socket.to(roomId).emit("incoming-call", payload);
-    // Also notify target user globally if they are elsewhere in the app
     if (targetUserId) {
       socket.to(`user:${targetUserId}`).emit("incoming-call", payload);
     }
   });
 
-  // Call end: when one party hangs up, notify the others
   socket.on("end-call", ({ roomId }) => {
     if (!roomId) return;
     socket.to(roomId).emit("call-ended", { roomId });
@@ -107,7 +103,14 @@ io.on("connection", (socket) => {
   });
 });
 
-httpServer.listen(PORT, () => {
-  console.log(`server is running on port ${PORT}`);
-  connectDB();
-});
+// Connect DB first, then start server
+connectDB()
+  .then(() => {
+    httpServer.listen(PORT, () => {
+      console.log(`Server is running on port ${PORT}`);
+    });
+  })
+  .catch((err) => {
+    console.error("Database connection failed:", err);
+    process.exit(1);
+  });
