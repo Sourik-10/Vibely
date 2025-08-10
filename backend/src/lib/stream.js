@@ -1,7 +1,6 @@
 import StreamChatPkg from "stream-chat";
 const { StreamChat } = StreamChatPkg;
 import "dotenv/config";
-import { use } from "react";
 
 const apiKey = process.env.STREAM_API_KEY;
 const apiSecret = process.env.STREAM_API_SECRET;
