@@ -3,9 +3,6 @@ import "dotenv/config";
 import cookieParser from "cookie-parser";
 import http from "http";
 import { Server as SocketIOServer } from "socket.io";
-import path from "path";
-import { fileURLToPath } from "url";
-
 import authRoutes from "./routes/auth.route.js";
 import { connectDB } from "./lib/db.js";
 import userRoutes from "./routes/user.route.js";
@@ -17,19 +14,13 @@ import Message from "./models/Message.js";
 const app = express();
 const PORT = process.env.PORT || 5001;
 
-// Get __dirname equivalent for ES modules
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
-
 app.use(
   cors({
-    origin:
-      process.env.NODE_ENV === "production"
-        ? false // Disable CORS in production since we're serving from same origin
-        : "http://localhost:5173",
-    credentials: true, // Allow credentials to be sent cookies
+    origin: "http://localhost:5173",
+     credentials: true, // Allow credentials to be sent cookies
   })
 );
+
 app.use(express.json());
 app.use(cookieParser());
 
@@ -39,23 +30,11 @@ app.use("/api/users", userRoutes);
 app.use("/api/chat", chatRoutes);
 app.use("/api/profile", profileRoutes);
 
-// Serve static files from the React app build
-app.use(express.static(path.join(__dirname, "../../frontend/dist")));
-
-// Handle React routing, return all requests to React app
-app.get("*", (req, res) => {
-  res.sendFile(path.join(__dirname, "../../frontend/dist", "index.html"));
-});
-
 // Create HTTP server and initialize Socket.IO
 const httpServer = http.createServer(app);
 const io = new SocketIOServer(httpServer, {
-  cors: {
-    origin:
-      process.env.NODE_ENV === "production"
-        ? false // Disable CORS in production since we're serving from same origin
-        : "http://localhost:5173",
-    credentials: true,
+  cors: {  origin: "http://localhost:5173",
+     credentials: true,
   },
 });
 
