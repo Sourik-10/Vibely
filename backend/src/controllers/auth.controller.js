@@ -2,20 +2,24 @@ import User from "../models/User.js";
 import jwt from "jsonwebtoken";
 import { upsertStreameUser } from "../lib/stream.js";
 
+// Common cookie settings for dev & prod
+const cookieOptions = {
+  httpOnly: true,
+  sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
+  secure: process.env.NODE_ENV === "production",
+  maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
+};
+
 export async function signup(req, res) {
   const { email, password, fullName } = req.body;
 
   try {
     if (!email || !password || !fullName) {
-      return res.status(400).json({
-        message: "All fields are required",
-      });
+      return res.status(400).json({ message: "All fields are required" });
     }
 
     if (password.length < 6) {
-      return res
-        .status(400)
-        .json({ message: "Password must be at least 6 characters" });
+      return res.status(400).json({ message: "Password must be at least 6 characters" });
     }
 
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -25,9 +29,7 @@ export async function signup(req, res) {
 
     const existingUser = await User.findOne({ email });
     if (existingUser) {
-      return res
-        .status(400)
-        .json({ message: "Email already exists,please use a different one " });
+      return res.status(400).json({ message: "Email already exists, please use a different one" });
     }
 
     const randomAvatar = `https://api.dicebear.com/7.x/avataaars/svg?seed=${fullName}&backgroundColor=b6e3f4,c0aede,d1d4f9,ffd5dc,ffdfbf`;
@@ -39,8 +41,6 @@ export async function signup(req, res) {
       profilePic: randomAvatar,
     });
 
-    //todo create user in streamas well
-
     try {
       await upsertStreameUser({
         id: user._id.toString(),
@@ -51,23 +51,14 @@ export async function signup(req, res) {
     } catch (error) {
       console.error("Error creating Stream user:", error);
     }
-    const token = jwt.sign({ userId: user._id }, process.env.JWT_SECRET_KEY, {
-      expiresIn: "7d",
-    });
 
- res.cookie("jwt", token, {
-  maxAge: 7 * 24 * 60 * 60 * 1000,
-  httpOnly: true,
-  sameSite: "none", // ✅ allows cross-site
-  secure: true  
-});
-
-
+    const token = jwt.sign({ userId: user._id }, process.env.JWT_SECRET_KEY, { expiresIn: "7d" });
+    res.cookie("jwt", token, cookieOptions);
 
     res.status(201).json({ success: true, user });
   } catch (error) {
-    console.log("Erroro in signup controller", error);
-    res.status(500).json({ message: "internal server error " });
+    console.log("Error in signup controller", error);
+    res.status(500).json({ message: "Internal server error" });
   }
 }
 
@@ -80,25 +71,13 @@ export async function login(req, res) {
     }
 
     const user = await User.findOne({ email });
-    if (!user)
-      return res.status(401).json({ message: "Invalid email or password" });
+    if (!user) return res.status(401).json({ message: "Invalid email or password" });
 
     const isPasswordCorrect = await user.matchPassword(password);
-    if (!isPasswordCorrect)
-      return res.status(401).json({ message: "Invalid email or password" });
+    if (!isPasswordCorrect) return res.status(401).json({ message: "Invalid email or password" });
 
-    const token = jwt.sign({ userId: user._id }, process.env.JWT_SECRET_KEY, {
-      expiresIn: "7d",
-    });
-
- res.cookie("jwt", token, {
-  maxAge: 7 * 24 * 60 * 60 * 1000,
-  httpOnly: true,
-  sameSite: "none", // ✅ allows cross-site
-  secure: true 
-});
-
-
+    const token = jwt.sign({ userId: user._id }, process.env.JWT_SECRET_KEY, { expiresIn: "7d" });
+    res.cookie("jwt", token, cookieOptions);
 
     res.status(200).json({ success: true, user });
   } catch (error) {
@@ -110,12 +89,11 @@ export async function login(req, res) {
 export function logout(req, res) {
   res.clearCookie("jwt", {
     httpOnly: true,
-    sameSite: "none",
-    secure: true
+    sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
+    secure: process.env.NODE_ENV === "production",
   });
   res.status(200).json({ success: true, message: "Logout successful" });
 }
-
 
 export async function me(req, res) {
   try {
@@ -130,17 +108,9 @@ export async function me(req, res) {
 export async function onboard(req, res) {
   try {
     const userId = req.user._id;
+    const { fullName, bio, nativeLanguage, learningLanguage, location } = req.body;
 
-    const { fullName, bio, nativeLanguage, learningLanguage, location } =
-      req.body;
-
-    if (
-      !fullName ||
-      !bio ||
-      !nativeLanguage ||
-      !learningLanguage ||
-      !location
-    ) {
+    if (!fullName || !bio || !nativeLanguage || !learningLanguage || !location) {
       return res.status(400).json({
         message: "All fields are required",
         missingFields: [
@@ -162,8 +132,7 @@ export async function onboard(req, res) {
       { new: true }
     );
 
-    if (!updatedUser)
-      return res.status(404).json({ message: "User not found" });
+    if (!updatedUser) return res.status(404).json({ message: "User not found" });
 
     try {
       await upsertStreameUser({
@@ -172,11 +141,8 @@ export async function onboard(req, res) {
         image: updatedUser.profilePic || "",
       });
       console.log(`Stream user updated for ${updatedUser.fullName}`);
-    } catch (stremError) {
-      console.log(
-        "Error updating stream user during onboarding:",
-        stremError.message
-      );
+    } catch (streamError) {
+      console.log("Error updating stream user during onboarding:", streamError.message);
     }
 
     res.status(200).json({ success: true, user: updatedUser });
