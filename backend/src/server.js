@@ -18,7 +18,6 @@ const PORT = parseInt(process.env.PORT, 10) || 5001;
 
 // Allowed origins (local + production)
 const allowedOrigins = [
-  "http://localhost:5173",
   process.env.FRONTEND_URL || "https://vibely-frontend.vercel.app"
 ];
 
