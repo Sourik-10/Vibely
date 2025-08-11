@@ -69,7 +69,7 @@ const OnboardingPage = () => {
         formData.append("profileImage", selectedFile);
 
         const response = await fetch(
-          "http://localhost:5001/api/profile/upload-image",
+          "https://vibely-2.onrender.com/api/profile/upload-image",
           {
             method: "POST",
             body: formData,
@@ -129,7 +129,7 @@ const OnboardingPage = () => {
       formData.append("profileImage", file);
 
       const uploadResponse = await fetch(
-        "http://localhost:5001/api/profile/upload-image",
+        "https://vibely-2.onrender.com/api/profile/upload-image",
         {
           method: "POST",
           body: formData,
