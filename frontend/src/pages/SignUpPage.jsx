@@ -6,8 +6,10 @@ import { Link, useNavigate } from "react-router-dom";
 
 // Signup API call function
 const signup = async (signupData) => {
-  const response = await axiosInstance.post("/auth/signup", signupData);
-  return response.data;
+  const response = await axiosInstance.post("/auth/signup", signupData, {
+  withCredentials: true,
+});
+
 };
 
 const SignUpPage = () => {
