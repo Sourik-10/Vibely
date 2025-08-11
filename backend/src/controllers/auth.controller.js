@@ -91,6 +91,8 @@ export function logout(req, res) {
     httpOnly: true,
     sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
     secure: process.env.NODE_ENV === "production",
+     maxAge: 7 * 24 * 60 * 60 * 1000 // match login cookie
+
   });
   res.status(200).json({ success: true, message: "Logout successful" });
 }
