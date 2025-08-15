@@ -60,15 +60,18 @@ const HomePage = () => {
     retry: 1,
   });
 
-  useEffect(() => {
-    const outgoingIds = new Set();
-    if (outgoingFriendReqs.length > 0) {
-      outgoingFriendReqs.forEach((req) => {
+ useEffect(() => {
+  const outgoingIds = new Set();
+  if (outgoingFriendReqs.length > 0) {
+    outgoingFriendReqs.forEach((req) => {
+      if (req?.recipient?._id) {
         outgoingIds.add(req.recipient._id);
-      });
-      setOutgoingRequestsIds(outgoingIds);
-    }
-  }, [outgoingFriendReqs]);
+      }
+    });
+    setOutgoingRequestsIds(outgoingIds);
+  }
+}, [outgoingFriendReqs]);
+
 
   // Debug logging
   useEffect(() => {
